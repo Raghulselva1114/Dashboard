@@ -42,17 +42,40 @@ const Navbar = () => {
       </div>
 
       {isOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <a href="#" className="block px-3 py-2 text-gray-700 hover:text-blue-900">Dashboard</a>
-            <a href="#" className="block px-3 py-2 text-gray-700 hover:text-blue-900">Analytics</a>
-            <a href="#" className="block px-3 py-2 text-gray-700 hover:text-blue-900"></a>
-            <a href="#" className="block px-3 py-2 text-gray-700 hover:text-blue-900">Settings</a>
-            <button className="w-full text-left px-3 py-2 bg-blue-900 text-white rounded-md">
-              Login
-            </button>
+    <div className="min-h-screen bg-white flex items-center justify-center relative">
+    {/* Sidebar Menu */}
+    <div className="w-full max-w-xs shadow-md rounded-xl bg-white p-4 z-10">
+      {/* Header */}
+      
+  
+      {/* Navigation with dropdown icons */}
+      <nav className="space-y-2">
+        {["Dashboard", "Analytics", "Production of Energy Resources", "Availability of Energy Resources","Login"].map((item, idx) => (
+          <div
+            key={idx}
+            className="flex justify-between items-center px-3 py-2 text-blue-800 hover:bg-gray-100 rounded-md transition-all"
+          >
+            <span>{item}</span>
+            {item !== "Home" && <span className="text-lg">▾</span>}
           </div>
-        </div> 
+        ))}
+      </nav>
+    </div>
+  
+    {/* Background image - light faded */}
+    <img 
+      src="/mnt/data/d27c30c0-103c-4aed-9e72-e69cb65bb69c.png" 
+      alt="Energy Sector Growth" 
+      className="absolute inset-0 w-full h-full object-contain opacity-5 z-0" 
+    />
+  </div>
+  
+  
+
+  
+  
+
+     
       )}
     </nav>
   );

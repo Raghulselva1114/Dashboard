@@ -13,7 +13,7 @@ import {
 import { Line, Bar } from "react-chartjs-2";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Download, FileSpreadsheet, Maximize2 } from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -29,7 +29,8 @@ ChartJS.register(
 // ---------- Shared Styles ----------
 const containerStyle = "relative w-full md:w-[48%] bg-white shadow-md rounded-xl p-4 mb-6";
 const titleStyle = "text-lg font-semibold mb-4 text-center";
-const iconButtonStyle = "absolute top-4 right-4 flex gap-2";
+const iconTopRightStyle = "absolute top-4 right-4 flex gap-2";
+const fullscreenIconStyle = "absolute bottom-4 left-4";
 
 // ---------- Export Helpers ----------
 const exportChartAsImage = (ref: any, name: string) => {
@@ -52,13 +53,18 @@ const exportDataAsExcel = (labels: string[], data: number[], label: string, file
   saveAs(new Blob([wbout], { type: "application/octet-stream" }), `${fileName}.xlsx`);
 };
 
+const enterFullscreen = (ref: React.RefObject<HTMLDivElement>) => {
+  if (ref.current && ref.current.requestFullscreen) {
+    ref.current.requestFullscreen();
+  }
+};
+
 // ---------- Common Labels ----------
 const years = [
   "2014-15", "2015-16", "2016-17", "2017-18", "2018-19",
   "2019-20", "2020-21", "2021-22", "2022-23", "2023-24(P)",
 ];
 
-// ---------- Chart Data ----------
 const productionData = [609.18, 639.23, 657.87, 675.40, 728.72, 730.87, 716.08, 778.21, 893.19, 997.83];
 const importData = [217.78, 203.95, 190.95, 208.25, 235.35, 248.54, 215.25, 208.63, 237.67, 264.53];
 
@@ -127,18 +133,36 @@ const AllEnergyCharts = () => {
     electricity: useRef<any>(null),
   };
 
+  const wrappers = {
+    coal: useRef<HTMLDivElement>(null),
+    lignite: useRef<HTMLDivElement>(null),
+    crude: useRef<HTMLDivElement>(null),
+    petroleum: useRef<HTMLDivElement>(null),
+    gas: useRef<HTMLDivElement>(null),
+    electricity: useRef<HTMLDivElement>(null),
+  };
+
+  const renderTopRightIcons = (refKey: keyof typeof refs, fileName: string, label: string, labels: string[], data: number[]) => (
+    <div className={iconTopRightStyle}>
+      <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs[refKey], fileName)} />
+      <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(labels, data, label, fileName)} />
+    </div>
+  );
+
+  const renderFullscreenIcon = (refKey: keyof typeof wrappers) => (
+    <Maximize2 className={`${fullscreenIconStyle} cursor-pointer`} onClick={() => enterFullscreen(wrappers[refKey])} />
+  );
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
-       <h2 className="text-xl font-semibold mb-4 text-center">Availability of Energy Resources</h2>
+      <h2 className="text-xl font-semibold mb-4 text-center">Availability of Energy Resources</h2>
 
       {/* Row 1 */}
       <div className="flex flex-col md:flex-row justify-between gap-4">
-        {/* Chart 1: Coal */}
-        <div className={containerStyle}>
-          <div className={iconButtonStyle}>
-            <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs.coal, "Coal_Production_Import")} />
-            <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(years, productionData, "Coal Production", "Coal_Production_Import")} />
-          </div>
+        {/* Coal */}
+        <div className={containerStyle} ref={wrappers.coal}>
+          {renderTopRightIcons("coal", "Coal_Production_Import", "Coal Production", years, productionData)}
+          {renderFullscreenIcon("coal")}
           <h2 className={titleStyle}>Trend of Production and Import of Coal in India</h2>
           <Line
             ref={refs.coal}
@@ -167,12 +191,10 @@ const AllEnergyCharts = () => {
           />
         </div>
 
-        {/* Chart 2: Coal & Lignite */}
-        <div className={containerStyle}>
-          <div className={iconButtonStyle}>
-            <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs.lignite, "Coal_Lignite")} />
-            <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(coalLigniteYears, coalData, "Coal", "Coal_Lignite")} />
-          </div>
+        {/* Coal & Lignite */}
+        <div className={containerStyle} ref={wrappers.lignite}>
+          {renderTopRightIcons("lignite", "Coal_Lignite", "Coal", coalLigniteYears, coalData)}
+          {renderFullscreenIcon("lignite")}
           <h2 className={titleStyle}>Availability of Coal and Lignite in India</h2>
           <Bar
             ref={refs.lignite}
@@ -206,12 +228,10 @@ const AllEnergyCharts = () => {
 
       {/* Row 2 */}
       <div className="flex flex-col md:flex-row justify-between gap-4">
-        {/* Chart 3: Crude Oil */}
-        <div className={containerStyle}>
-          <div className={iconButtonStyle}>
-            <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs.crude, "Crude_Oil")} />
-            <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(years, crudeOilData, "Crude Oil", "Crude_Oil")} />
-          </div>
+        {/* Crude Oil */}
+        <div className={containerStyle} ref={wrappers.crude}>
+          {renderTopRightIcons("crude", "Crude_Oil", "Crude Oil", years, crudeOilData)}
+          {renderFullscreenIcon("crude")}
           <h2 className={titleStyle}>Availability of Crude Oil in India (2014–2024)</h2>
           <Line
             ref={refs.crude}
@@ -240,12 +260,10 @@ const AllEnergyCharts = () => {
           />
         </div>
 
-        {/* Chart 4: Petroleum */}
-        <div className={containerStyle}>
-          <div className={iconButtonStyle}>
-            <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs.petroleum, "Petroleum_Products")} />
-            <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(years, petroleumData, "Petroleum", "Petroleum_Products")} />
-          </div>
+        {/* Petroleum Products */}
+        <div className={containerStyle} ref={wrappers.petroleum}>
+          {renderTopRightIcons("petroleum", "Petroleum_Products", "Petroleum", years, petroleumData)}
+          {renderFullscreenIcon("petroleum")}
           <h2 className={titleStyle}>Availability of Petroleum Products in India (2014–2024)</h2>
           <Bar
             ref={refs.petroleum}
@@ -267,12 +285,10 @@ const AllEnergyCharts = () => {
 
       {/* Row 3 */}
       <div className="flex flex-col md:flex-row justify-between gap-4">
-        {/* Chart 5: Natural Gas */}
-        <div className={containerStyle}>
-          <div className={iconButtonStyle}>
-            <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs.gas, "Natural_Gas")} />
-            <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(years, naturalGasData, "Natural Gas", "Natural_Gas")} />
-          </div>
+        {/* Natural Gas */}
+        <div className={containerStyle} ref={wrappers.gas}>
+          {renderTopRightIcons("gas", "Natural_Gas", "Natural Gas", years, naturalGasData)}
+          {renderFullscreenIcon("gas")}
           <h2 className={titleStyle}>Availability of Natural Gas in India (2014–2024)</h2>
           <Bar
             ref={refs.gas}
@@ -300,12 +316,10 @@ const AllEnergyCharts = () => {
           />
         </div>
 
-        {/* Chart 6: Electricity */}
-        <div className={containerStyle}>
-          <div className={iconButtonStyle}>
-            <Download className="cursor-pointer" onClick={() => exportChartAsImage(refs.electricity, "Electricity")} />
-            <FileSpreadsheet className="cursor-pointer" onClick={() => exportDataAsExcel(years, electricityData, "Electricity", "Electricity")} />
-          </div>
+        {/* Electricity */}
+        <div className={containerStyle} ref={wrappers.electricity}>
+          {renderTopRightIcons("electricity", "Electricity", "Electricity", years, electricityData)}
+          {renderFullscreenIcon("electricity")}
           <h2 className={titleStyle}>Net Availability of Electricity in India (2014–2024)</h2>
           <Line
             ref={refs.electricity}

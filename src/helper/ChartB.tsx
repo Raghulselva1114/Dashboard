@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import Chart from "chart.js/auto";
-import { FaDownload, FaFileExcel, FaExpand, FaTimes } from "react-icons/fa";
+import { FaDownload, FaFileExcel } from "react-icons/fa";
+import { Maximize } from "lucide-react";
 import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
 
 const ChartB = () => {
   const chartRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const chartInstances = useRef<Chart[]>([]);
-  const [enlargedChart, setEnlargedChart] = useState<number | null>(null);
+  const containerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const chartData = [
     {
@@ -66,7 +67,12 @@ const ChartB = () => {
               responsive: true,
               maintainAspectRatio: false,
               plugins: {
-                legend: { position: "top" }
+                legend: { position: "top" },
+                title: {
+                  display: true,
+                  text: chart.title,
+                  font: { size: 16 }
+                }
               }
             }
           });
@@ -75,6 +81,20 @@ const ChartB = () => {
     });
   }, []);
 
+  const enterFullscreen = (ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      if (ref.current.requestFullscreen) {
+        ref.current.requestFullscreen();
+      } else if ((ref.current as any).webkitRequestFullscreen) {
+        (ref.current as any).webkitRequestFullscreen();
+      } else if ((ref.current as any).mozRequestFullScreen) {
+        (ref.current as any).mozRequestFullScreen();
+      } else if ((ref.current as any).msRequestFullscreen) {
+        (ref.current as any).msRequestFullscreen();
+      }
+    }
+  };
+
   const downloadExcel = (index: number) => {
     const data = chartData[index].labels.map((label, i) => ({
       Type: label,
@@ -82,8 +102,8 @@ const ChartB = () => {
     }));
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, `Chart_${index + 1}_Data`);
-    XLSX.writeFile(workbook, `chart_${index + 1}_data.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, `Chart_${index + 1}`);
+    XLSX.writeFile(workbook, `chart_${index + 1}.xlsx`);
   };
 
   const downloadPNG = (index: number) => {
@@ -97,58 +117,47 @@ const ChartB = () => {
     }
   };
 
+  const renderChart = (chart: any, index: number) => (
+    <div
+      key={index}
+      ref={(el) => (containerRefs.current[index] = el)}
+      className="relative rounded-2xl shadow-lg bg-white dark:bg-gray-900 p-4 transition-all h-[450px] w-full"
+    >
+      {/* Bottom-left fullscreen button */}
+      <div className="absolute bottom-2 left-2 z-10">
+        <Maximize
+          size={20}
+          className="cursor-pointer text-gray-600 hover:text-black"
+          onClick={() => enterFullscreen({ current: containerRefs.current[index] })}
+        />
+      </div>
+
+      {/* Top-right export buttons */}
+      <div
+        className="absolute top-4 right-4 flex gap-4 z-20"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <FaDownload className="text-blue-600 cursor-pointer" onClick={() => downloadPNG(index)} />
+        <FaFileExcel className="text-green-600 cursor-pointer" onClick={() => downloadExcel(index)} />
+      </div>
+
+      <h5 className="text-lg font-semibold text-center text-gray-800 dark:text-white mb-2">{chart.title}</h5>
+      <p className="text-sm text-center text-gray-500 dark:text-gray-300 mb-2">{chart.reserves}</p>
+
+      <div className="h-[360px]">
+        <canvas ref={(el) => (chartRefs.current[index] = el)} />
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-4">
-      <h2 className="text-xl font-semibold mb-6 text-center">
+      <h2 className="text-2xl font-bold mb-6 text-center dark:text-white">
         Estimated Energy Reserves in India (2024)
       </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {chartData.map((chart, index) => (
-          <div
-            key={index}
-            className={`p-4 shadow-lg rounded-2xl bg-white text-center relative ${
-              enlargedChart === index ? "fixed top-0 left-0 w-full h-full z-[1000] bg-white flex items-center justify-center" : ""
-            }`}
-          >
-            <h5 className="text-lg font-medium mb-2">{chart.title}</h5>
-            <p className="text-gray-500 text-sm mb-4">{chart.reserves}</p>
-
-            {/* Top-right download buttons */}
-            <div className="absolute top-3 right-3 flex gap-3 z-10">
-              <FaDownload
-                className="text-blue-600 cursor-pointer"
-                size={18}
-                onClick={() => downloadPNG(index)}
-              />
-              <FaFileExcel
-                className="text-green-600 cursor-pointer"
-                size={18}
-                onClick={() => downloadExcel(index)}
-              />
-            </div>
-
-            {/* Expand / Collapse toggle */}
-            <FaExpand
-              className="text-gray-800 absolute bottom-4 left-4 cursor-pointer z-10"
-              size={18}
-              onClick={(e) => {
-                e.stopPropagation();
-                setEnlargedChart(enlargedChart === index ? null : index);
-              }}
-            />
-            {enlargedChart === index && (
-              <FaTimes
-                className="text-red-600 absolute top-4 right-4 cursor-pointer z-20"
-                size={24}
-                onClick={() => setEnlargedChart(null)}
-              />
-            )}
-
-            <div style={{ height: enlargedChart === index ? "70vh" : "400px" }}>
-              <canvas ref={(el) => (chartRefs.current[index] = el)} />
-            </div>
-          </div>
-        ))}
+        {chartData.map((chart, index) => renderChart(chart, index))}
       </div>
     </div>
   );
