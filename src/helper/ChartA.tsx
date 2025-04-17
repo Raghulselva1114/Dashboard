@@ -139,7 +139,7 @@ const ChartA: React.FC = () => {
               style={{ cursor: "pointer" }}
             />
           </div>
-          <div className="position-absolute bottom-0 end-0 p-3 text-muted" style={{ fontSize: "0.8rem" }}>
+          <div className="position-absolute -bottom-5 end-0 p-3 text-muted" style={{ fontSize: "0.8rem" }}>
             Data Source: Ministry of New and Renewable Energy
           </div>
         </div>

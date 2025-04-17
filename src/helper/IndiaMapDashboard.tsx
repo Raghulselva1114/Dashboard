@@ -1,11 +1,18 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
-import { scaleQuantize } from "d3-scale";
+import { geoCentroid } from "d3-geo";
+import { Tooltip } from "react-tooltip";
 import { toPng } from "html-to-image";
-import { saveAs } from "file-saver";
 import * as XLSX from "xlsx";
-import indiaGeoUrl from "../data/indiastates.json";
-import { FileDown, ImageDown, Sun, Moon } from "lucide-react";
+import { saveAs } from "file-saver";
+import {
+  Moon,
+  Sun,
+  Image as ImageIcon,
+  FileSpreadsheet,
+} from "lucide-react";
+import indiaGeoJson from "../data/indiastates.json";
+import "react-tooltip/dist/react-tooltip.css";
 
 const renewableData: Record<string, Record<string, number>> = {
   "2014": {
@@ -59,12 +66,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 0.16,
     Gujarat: 4663.39,
     Haryana: 249.14,
-    HimachalPradesh: 735.98,
+    "Himachal Pradesh": 735.98,
     Jharkhand: 25.51,
     Karnataka: 5223.71,
     Kerala: 209.83,
     Lakshadweep: 1.92,
-    MadhyaPradesh: 1612.48,
+    "Madhya Pradesh": 1612.48,
     Maharashtra: 7028.38,
     Manipur: 6.63,
     Meghalaya: 45.90,
@@ -96,12 +103,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 0.17,
     Gujarat: 5181.96,
     Haryana: 280.38,
-    HimachalPradesh: 805.58,
+    "Himachal Pradesh": 805.58,
     Jharkhand: 28.76,
     Karnataka: 5673.07,
     Kerala: 5673.07,
     Lakshadweep: 3.02,
-    MadhyaPradesh: 3119.98,
+    "Madhya Pradesh": 3119.98,
     Maharashtra: 7404.61,
     Manipur: 7.06,
     Meghalaya: 46.36,
@@ -133,12 +140,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 0.88,
     Gujarat: 6715.40,
     Haryana: 348.02,
-    HimachalPradesh: 846.47,
+    "Himachal Pradesh": 846.47,
     Jharkhand: 41.61,
     Karnataka: 7500.26,
     Kerala: 357.87,
     Lakshadweep: 2.98,
-    MadhyaPradesh: 3562.14,
+    "Madhya Pradesh": 3562.14,
     Maharashtra: 7697.03,
     Manipur: 7.13,
     Meghalaya: 46.37,
@@ -170,12 +177,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 1.08,
     Gujarat: 7349.45,
     Haryana: 510.49,
-    HimachalPradesh: 869.28,
+    "Himachal Pradesh": 869.28,
     Jharkhand: 46.94,
     Karnataka: 12584.19,
     Kerala: 400.56,
     Lakshadweep: 3.14,
-    MadhyaPradesh: 4050.13,
+    "Madhya Pradesh": 4050.13,
     Maharashtra: 8632.21,
     Manipur: 10.28,
     Meghalaya: 46.85,
@@ -207,12 +214,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 4.09,
     Gujarat: 8707.72,
     Haryana: 519.11,
-    HimachalPradesh: 898.73,
+    "Himachal Pradesh": 898.73,
     Jharkhand: 57.87,
     Karnataka: 13880.20,
     Kerala: 434.21,
     Lakshadweep: 3.14,
-    MadhyaPradesh: 4629.87,
+    "Madhya Pradesh": 4629.87,
     Maharashtra: 9374.69,
     Manipur: 13.66,
     Meghalaya: 50.18,
@@ -244,12 +251,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 5.29,
     Gujarat: 10693.77,
     Haryana: 547.19,
-    HimachalPradesh: 959.89,
+    "Himachal Pradesh": 959.89,
     Jharkhand: 63.80,
     Karnataka: 15273.93,
     Kerala: 447.85,
     Lakshadweep: 3.27,
-    MadhyaPradesh: 5050.75,
+    "Madhya Pradesh": 5050.75,
     Maharashtra: 9775.27,
     Manipur: 15.43,
     Meghalaya: 50.18,
@@ -281,12 +288,12 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 7.95,
     Gujarat: 13214.25,
     Haryana: 762.51,
-    HimachalPradesh: 996.59,
+    "Himachal Pradesh": 996.59,
     Jharkhand: 78.21,
     Karnataka: 15505.13,
     Kerala: 572.42,
     Lakshadweep: 3.27,
-    MadhyaPradesh: 5291.97,
+    "Madhya Pradesh": 5291.97,
     Maharashtra: 10335.85,
     Manipur: 16.84,
     Meghalaya: 50.18,
@@ -318,13 +325,13 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 20.34,
     Gujarat: 16587.90,
     Haryana: 1242.13,
-    HimachalPradesh: 1040.47,
+    "Himachal Pradesh": 1040.47,
     Jharkhand: 97.14,
     Karnataka: 15904.59,
     Kerala: 670.70,
     Ladakh: 47.44,
     Lakshadweep: 3.27,
-    MadhyaPradesh: 5468.88,
+    "Madhya Pradesh": 5468.88,
     Maharashtra: 10657.08,
     Manipur: 17.70,
     Meghalaya: 50.48,
@@ -356,13 +363,13 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 26.88,
     Gujarat: 19435.85,
     Haryana: 1362.09,
-    HimachalPradesh: 1067.40,
+    "Himachal Pradesh": 1067.40,
     Jharkhand: 114.19,
     Karnataka: 16719.23,
     Kerala: 1092.95,
     Ladakh: 48.79,
     Lakshadweep: 3.27,
-    MadhyaPradesh: 5905.08,
+    "Madhya Pradesh": 5905.08,
     Maharashtra: 12757.50,
     Manipur: 17.73,
     Meghalaya: 50.48,
@@ -394,13 +401,13 @@ const renewableData: Record<string, Record<string, number>> = {
     Goa: 45.47,
     Gujarat: 25471.72,
     Haryana: 1832.92,
-    HimachalPradesh: 1075.14,
+    "Himachal Pradesh": 1075.14,
     Jharkhand: 185.55,
     Karnataka: 17752.74,
     Kerala: 1365.31,
     Ladakh: 50.79,
     Lakshadweep: 4.97,
-    MadhyaPradesh: 7098.37,
+    "Madhya Pradesh": 7098.37,
     Maharashtra: 14483.12,
     Manipur: 18.49,
     Meghalaya: 73.07,
@@ -421,154 +428,183 @@ const renewableData: Record<string, Record<string, number>> = {
   },
 };
 
-const years = Object.keys(renewableData);
+const getColor = (value: number): string => {
+  if (value > 20000) return "#08306b";
+  if (value > 15000) return "#08519c";
+  if (value > 10000) return "#2171b5";
+  return "#f7fbff";
+};
 
-const IndiaRenewableMap = () => {
-  const mapRef = useRef(null); 
-  const [year, setYear] = useState("2022");
-  const [darkMode, setDarkMode] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState("");
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+const IndiaMapDashboard: React.FC = () => {
+  const [selectedState, setSelectedState] = useState<string | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([82, 22]);
+  const [mapScale, setMapScale] = useState<number>(350);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [selectedYear, setSelectedYear] = useState<string>("2023");
+  const mapRef = useRef<HTMLDivElement>(null);
 
-  const colorScale = scaleQuantize<string>()
-    .domain([Math.min(...Object.values(renewableData[year])), Math.max(...Object.values(renewableData[year]))])
-    .range([
-      "#f7fbff",
-      "#deebf7",
-      "#c6dbef",
-      "#9ecae1",
-      "#6baed6",
-      "#4292c6",
-      "#2171b5",
-      "#08519c",
-      "#08306b",
-    ]);
+  // const handleStateClick = (geo: any) => {
+  //   const stateName = geo.properties.st_nm || geo.properties.NAME_1;
+  //   setSelectedState(stateName);
+  //   const centroid = geoCentroid(geo);
+  //   setMapCenter(centroid as [number, number]);
+  //   setMapScale(1500);
+  // };
 
-  const handleExportPNG = () => {
+  const resetMap = () => {
+    setSelectedState(null);
+    setMapCenter([82, 22]);
+    setMapScale(350);
+  };
+
+  const exportToImage = () => {
     if (mapRef.current) {
-      toPng(mapRef.current as HTMLElement).then((dataUrl) => {
-        saveAs(dataUrl, `renewable_map_${year}.png`);
+      toPng(mapRef.current).then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `india_map_${selectedYear}.png`;
+        link.href = dataUrl;
+        link.click();
       });
     }
   };
 
-  const handleExportExcel = () => {
-    const data = Object.entries(renewableData[year]).map(([state, value]) => ({
+  const exportToExcel = () => {
+    const yearData = renewableData[selectedYear];
+    const data = Object.entries(yearData).map(([state, value]) => ({
       State: state,
-      "Potential (MW)": value,
+      "Renewable Power (MW)": value,
     }));
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Renewable Potential");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(blob, `renewable_potential_${year}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, selectedYear);
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
+    saveAs(blob, `renewable_power_${selectedYear}.xlsx`);
   };
 
-  const handleMouseEnter = (e: React.MouseEvent, stateName: string, value: number) => {
-    const { clientX, clientY } = e;
-    setTooltipContent(`${stateName}: ${value ? value.toLocaleString() : "N/A"} MW`);
-    setTooltipPosition({ x: clientX + 10, y: clientY + 10 }); // Adjust tooltip position relative to the mouse cursor
-  };
-
-  const handleMouseLeave = () => {
-    setTooltipContent("");
-  };
+  const stateData = renewableData[selectedYear];
 
   return (
-    <div className={`${darkMode ? "bg-black" : "bg-white text-black"} p-4 rounded-xl shadow-md`}>
-      {/* Title and Controls Section */}
-      <div className="-mb-40 ">
-        <div className="flex justify-between items-center  -mb-70">
-          <h2 className="text-xl font-bold">Renewable Energy Potential by State (MW)</h2>
-          <div className="flex items-center gap-3">
-            <select
-              value={year}
-              onChange={(e) => setYear(e.target.value)}
-              className="border rounded px-2 py-1"
-            >
-              {years.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-            <button onClick={handleExportPNG}>
-              <ImageDown className="w-5 h-5" />
-            </button>
-            <button onClick={handleExportExcel}>
-              <FileDown className="w-5 h-5" />
-            </button>
-            <button onClick={() => setDarkMode((prev) => !prev)}>
-              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
+    <div
+      className={`h-screen w-screen flex flex-col items-right justify-between p-4 overflow-hidden ${
+        darkMode ? "bg-black text-white" : "bg-white text-gray-800"
+      }`}
+    >
+      {/* Top Right Buttons */}
+  <div      className=" top-2 right-4 z-50 flex items-center gap-2  ">
+  <button
+    onClick={() => setDarkMode(!darkMode)}
+    className="p-2 rounded bg-gray-800 text-white hover:bg-gray-600"
+    title={darkMode ? "Light Mode" : "Dark Mode"}
+  >
+    {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+  </button>
+        <button
+          onClick={exportToImage}
+          className="p-2 rounded bg-green-600 text-white hover:bg-green-500"
+          title="Export PNG"
+        >
+          <ImageIcon size={18} />
+        </button>
+        <button
+          onClick={exportToExcel}
+          className="p-2 rounded bg-blue-600 text-white hover:bg-blue-500"
+          title="Export Excel"
+        >
+          <FileSpreadsheet size={18} />
+        </button>
       </div>
 
-      {/* Map Section */}
-      <div ref={mapRef} className="relative mb-4">
+      {/* Title + Year Selector */}
+      <div className="text-center mt-2 mb-2">
+        <h2 className="text-xl font-bold">
+          Renewable Power Potential (MW) - {selectedYear}
+        </h2>
+        <select
+          className="  bg-white text-black"
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+        >
+          {Object.keys(renewableData)
+            .sort()
+            .map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+        </select>
+      </div>
+
+      {/* Map */}
+      <div ref={mapRef} className="w-full h-full">
         <ComposableMap
           projection="geoMercator"
-          projectionConfig={{ scale: 950, center: [82.8, 22.5] }}
-          width={1200}
-          height={900}
+          width={1300}
+          height={1800}
+          projectionConfig={{
+            scale: 2500,
+            center: [82.8, 22.5],
+          }}
+          style={{ width: "100%", height: "100%" }}
         >
-          <Geographies geography={indiaGeoUrl}>
+          <Geographies geography={indiaGeoJson}>
             {({ geographies }) =>
-              geographies.map((geo) => {
-                const stateName = geo.properties.st_nm;
-                const value = renewableData[year][stateName];
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    onMouseEnter={(e) => handleMouseEnter(e, stateName, value)}
-                    onMouseLeave={handleMouseLeave}
-                    style={{
-                      default: {
-                        fill: value ? colorScale(value) : "#EEE",
-                        stroke: "#333",
-                        strokeWidth: 0.5,
-                        outline: "none",
-                      },
-                      hover: {
-                        fill: "#FFD700",
-                        stroke: "#000",
-                        strokeWidth: 1,
-                        outline: "none",
-                      },
-                      pressed: {
-                        fill: "#FF8C00",
-                        stroke: "#000",
-                        strokeWidth: 1,
-                        outline: "none",
-                      },
-                    }}
-                  />
-                );
-              })
+              geographies
+                .filter((geo) => {
+                  const stateName =
+                    geo.properties.st_nm || geo.properties.NAME_1;
+                  return !selectedState || stateName === selectedState;
+                })
+                .map((geo) => {
+                  const stateName =
+                    geo.properties.st_nm || geo.properties.NAME_1;
+                  const value =
+                    stateData[stateName] || stateData["Others"] || 0;
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      onClick={() => handleStateClick(geo)}
+                      data-tooltip-id="map-tooltip"
+                      data-tooltip-content={`${stateName}: ${value.toLocaleString()} MW`}
+                      fill={getColor(value)}
+                      stroke={darkMode ? "#bbb" : "#333"}
+                      strokeWidth={0.8}
+                      style={{
+                        default: { outline: "none", cursor: "pointer" },
+                        hover: { fill: "#FFD700", outline: "none" },
+                        pressed: { fill: "#FF8C00", outline: "none" },
+                      }}
+                    />
+                  );
+                })
             }
           </Geographies>
         </ComposableMap>
-
-        {/* Tooltip */}
-        {tooltipContent && (
-          <div
-            className="absolute text-xs px-2 py-1 rounded shadow z-10 pointer-events-none"
-            style={{
-              top: tooltipPosition.y,
-              left: tooltipPosition.x,
-              backgroundColor: "black",
-              color: "white",
-            }}
-          >
-            {tooltipContent}
-          </div>
-        )}
       </div>
+
+      <Tooltip id="map-tooltip" />
+
+      {selectedState && (
+        <button
+          onClick={resetMap}
+          className="mt-2 px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Back to Full Map
+        </button>
+      )}
+
+<div className=" bottom-2 right-2text-xs italic text-gray-500">
+  Source: Ministry of new & Renewable Energy
+</div>
+
     </div>
   );
 };
 
-export default IndiaRenewableMap;
+export default IndiaMapDashboard;
